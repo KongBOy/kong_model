@@ -242,21 +242,21 @@ np.random.seed(19)
 # image_size_height = 96
 
 ####################################################################################
-### 08a 加入 10張格線影像 且 no-shuffle
-## wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle
-name = "wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle"
-phase = "train"
-# ## train完後test
-# phase = "test"
+# ### 08a 加入 10張格線影像 且 no-shuffle
+# ## wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle
+# name = "wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
 
-epoch = 527 #800
+# epoch = 527 #800
 
-save_freq = 20000 ### 最多好像存5次
-print_freq = 100
-continue_train = False
-# continue_train = True
-image_size_width = 96
-image_size_height = 96
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 96
+# image_size_height = 96
 
 ####################################################################################
 ### 08b 加入 10張格線影像 且 have-shuffle
@@ -274,6 +274,23 @@ image_size_height = 96
 # # continue_train = True
 # image_size_width = 96
 # image_size_height = 96
+
+
+### 09 試試看no-cycle
+### wei-crop-accurate_w=304,h=472_mix
+name = "wei-crop-accurate_w=304,h=472_mix"
+phase = "train"
+# ## train完後test
+# phase = "test"
+
+epoch = 527 #800
+
+save_freq = 20000 ### 最多好像存5次
+print_freq = 100
+continue_train = False
+# continue_train = True
+image_size_width = 304
+image_size_height = 472
 
 ####################################################################################
 dataset_dir = name
@@ -330,14 +347,20 @@ def main(_):
         os.makedirs(args.sample_dir)
         # os.makedirs(args.sample_dir +"/A")
         # os.makedirs(args.sample_dir +"/B")
-        os.makedirs(args.sample_dir +"/to_curved/big")
-        os.makedirs(args.sample_dir +"/to_curved/big-left-top")
-        os.makedirs(args.sample_dir +"/to_curved/small-seen")
-        os.makedirs(args.sample_dir +"/to_curved/small-unseen")
-        os.makedirs(args.sample_dir +"/to_straight/big")
-        os.makedirs(args.sample_dir +"/to_straight/big-left-top")
-        os.makedirs(args.sample_dir +"/to_straight/small-seen")
-        os.makedirs(args.sample_dir +"/to_straight/small-unseen")
+
+        ### 因為寫在function裡會一直被呼叫到，所以我才拉出來main寫喔！
+        # os.makedirs(args.sample_dir +"/to_curved/big")
+        # os.makedirs(args.sample_dir +"/to_curved/big-left-top")
+        # os.makedirs(args.sample_dir +"/to_curved/small-seen")
+        # os.makedirs(args.sample_dir +"/to_curved/small-unseen")
+        # os.makedirs(args.sample_dir +"/to_straight/big")
+        # os.makedirs(args.sample_dir +"/to_straight/big-left-top")
+        # os.makedirs(args.sample_dir +"/to_straight/small-seen")
+        # os.makedirs(args.sample_dir +"/to_straight/small-unseen")
+
+        ### 因為寫在function裡會一直被呼叫到，所以我才拉出來main寫喔！
+        os.makedirs(args.sample_dir +"/to_straight/crop-accurate")
+
     if not os.path.exists(args.test_dir):
         os.makedirs(args.test_dir)
 
