@@ -217,7 +217,8 @@ class cyclegan(object):
 
                 if np.mod(counter, args.print_freq) == 1:#1:
                     #self.sample_model(args.sample_dir, epoch, idx, args,  counter) ### sample目的地資料夾、存圖時紀錄epoch
-                    self.Kong_sample(args.sample_dir, counter)  ### sample目的地資料夾、存圖時紀錄counter
+                    # self.Kong_sample_patch_version(args.sample_dir, counter)  ### sample目的地資料夾、存圖時紀錄counter
+                    self.Kong_sample_crop_accurate(args.sample_dir, counter)  ### sample目的地資料夾、存圖時紀錄counter
 
                 if np.mod(counter, args.save_freq) == 1:#2:
                     self.save(args.checkpoint_dir, counter)
@@ -272,18 +273,31 @@ class cyclegan(object):
         # for dataPair in self.Kong_test_dataPairs:
         #     print(dataPair)
 
+
     def Kong_sample_seperately(self, name, batch_files, img_num , counter):
         sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files]
         fake_A, fake_B = self.sess.run( [self.fake_A, self.fake_B], feed_dict={self.real_data: sample_images})
         save_images(fake_A, [ 1, img_num ], './{}/to_curved/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
         save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
-    def Kong_sample(self,sample_dir,counter):
+
+    ### 在修改sample的時候，記得要去main裡 新增資料夾喔！
+    ### 在修改sample的時候，記得要去main裡 新增資料夾喔！
+    ### 在修改sample的時候，記得要去main裡 新增資料夾喔！很重要說三次！
+    def Kong_sample_patch_version(self,sample_dir,counter):
         ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
         self.Kong_sample_seperately("big", self.Kong_test_dataPairs[5:10], 5, counter)
         self.Kong_sample_seperately("big-left-top", self.Kong_test_dataPairs[  : 5], 5, counter)
         self.Kong_sample_seperately("small-seen"  , self.Kong_test_dataPairs[10:15], 5, counter)
         self.Kong_sample_seperately("small-unseen", self.Kong_test_dataPairs[15:20], 5, counter)
+
+
+    ### 在修改sample的時候，記得要去main裡 新增資料夾喔！
+    ### 在修改sample的時候，記得要去main裡 新增資料夾喔！
+    ### 在修改sample的時候，記得要去main裡 新增資料夾喔！很重要說三次！
+    def Kong_sample_crop_accurate(self,sample_dir,counter,sample_amount = 1):
+        ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
+        self.Kong_sample_seperately("crop-accurate", self.Kong_test_dataPairs[ :sample_amount], sample_amount, counter)
 
 
     def sample_model(self, sample_dir, epoch, idx,args, counter): ### counter自己加的

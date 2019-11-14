@@ -330,6 +330,8 @@ def main(_):
         os.makedirs(args.sample_dir)
         # os.makedirs(args.sample_dir +"/A")
         # os.makedirs(args.sample_dir +"/B")
+        
+        ### Kong_sample_patch_version
         os.makedirs(args.sample_dir +"/to_curved/big")
         os.makedirs(args.sample_dir +"/to_curved/big-left-top")
         os.makedirs(args.sample_dir +"/to_curved/small-seen")
@@ -338,6 +340,11 @@ def main(_):
         os.makedirs(args.sample_dir +"/to_straight/big-left-top")
         os.makedirs(args.sample_dir +"/to_straight/small-seen")
         os.makedirs(args.sample_dir +"/to_straight/small-unseen")
+
+        ### Kong_sample_crop_accurate
+        os.makedirs(args.sample_dir +"/to_curved/crop-accurate")
+        os.makedirs(args.sample_dir +"/to_straight/crop-accurate")
+
     if not os.path.exists(args.test_dir):
         os.makedirs(args.test_dir)
 
