@@ -275,10 +275,26 @@ np.random.seed(19)
 # image_size_width = 96
 # image_size_height = 96
 
-
+####################################################################################
 ### 09 試試看no-cycle
 ### wei-crop-accurate_w=304,h=472_mix
-name = "wei-crop-accurate_w=304,h=472_mix"
+# name = "wei-crop-accurate_w=304,h=472_mix"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 527 #800
+
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_mix_x328
+name = "wei-crop-accurate_w=304,h=472_mix_x328"
 phase = "train"
 # ## train完後test
 # phase = "test"
@@ -292,6 +308,21 @@ continue_train = False
 image_size_width = 304
 image_size_height = 472
 
+####################################################################################
+### wei-crop-accurate_w=304,h=472_left-top_x82
+# name = "wei-crop-accurate_w=304,h=472_left-top_x82"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 527 #800
+
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
 ####################################################################################
 dataset_dir = name
 checkpoint_dir = name + "/checkpoint"
