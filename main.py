@@ -244,19 +244,19 @@ np.random.seed(19)
 ####################################################################################
 ### 08a 加入 10張格線影像 且 no-shuffle
 ## wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle
-name = "wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle"
-phase = "train"
-# ## train完後test
-# phase = "test"
+# name = "wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
 
-epoch = 527 #800
+# epoch = 527 #800
 
-save_freq = 20000 ### 最多好像存5次
-print_freq = 100
-continue_train = False
-# continue_train = True
-image_size_width = 96
-image_size_height = 96
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 96
+# image_size_height = 96
 
 ####################################################################################
 ### 08b 加入 10張格線影像 且 have-shuffle
@@ -274,6 +274,24 @@ image_size_height = 96
 # # continue_train = True
 # image_size_width = 96
 # image_size_height = 96
+
+
+####################################################################################s
+## wei-crop-accurate_w=304,h=472_left-top_x82_use_cycle
+name = "wei-crop-accurate_w=304,h=472_left-top_x82_use_cycle"
+phase = "train"
+# ## train完後test
+# phase = "test"
+
+epoch = 1000 #800
+
+save_freq = 20000 ### 最多好像存5次
+print_freq = 100
+continue_train = False
+# continue_train = True
+image_size_width = 304
+image_size_height = 472
+
 
 ####################################################################################
 dataset_dir = name
