@@ -41,18 +41,161 @@ class cyclegan(object):
                                       args.phase == 'train'))
         
         build_model_start_time = time.time()
-        self._build_model()
+        self._build_kong_model()
+        # self._build_model()
         print("_build_model_cost_time:",time.time()-build_model_start_time)
         self.saver = tf.train.Saver()
         self.pool = ImagePool(args.max_size)
 
         self.Kong_sample_dir = args.sample_dir
-        self.Kong_test_dataA = None
-        self.Kong_test_dataB = None
+        # self.Kong_test_dataA = None
+        # self.Kong_test_dataB = None
         self.Kong_test_dataPairs = None
         self.Kong_load_test_dataset()
 
     
+    def _build_kong_model(self):
+        self.curved_concat_straight = tf.placeholder(tf.float32,
+                                                     [None, None, None, self.input_c_dim + self.output_c_dim],
+                                                      name = "curved_concat_straight")
+        self.curved   = self.curved_concat_straight[:,:,:,                 :self.input_c_dim ]
+        self.straight = self.curved_concat_straight[:,:,:, self.input_c_dim:self.input_c_dim + self.input_c_dim]
+        
+        self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
+
+        # self.curved_to_straight_concat_curved = tf.concat([self.curved_to_straight, self.curved],3)
+        self.curved_to_straight_concat_curved = tf.concat([self.curved, self.curved_to_straight],3)
+        self.fake_pair = self.discriminator(self.curved_to_straight_concat_curved, self.options, reuse=False,  name="discriminator")
+        self.g_loss      = self.criterionGAN(self.fake_pair, tf.ones_like(self.fake_pair)) + \
+                           self.L1_lambda* abs_criterion(self.straight, self.curved_to_straight)
+        ####################################################################################################################################
+        self.fake_input_pair_img = tf.placeholder(tf.float32,
+                                            [None, None, None, self.input_c_dim + self.input_c_dim],
+                                            name = "fake_input_pair")
+        self.fake_input_pair_score = self.discriminator(self.fake_input_pair_img,        self.options, reuse=True,   name="discriminator")
+        self.real_pair             = self.discriminator(self.curved_concat_straight, self.options, reuse=True,   name="discriminator")
+        
+        
+        self.d_loss_real = self.criterionGAN(self.real_pair, tf.ones_like( self.real_pair)) 
+        self.d_loss_fake = self.criterionGAN(self.fake_pair, tf.zeros_like(self.fake_input_pair_score)) 
+        self.d_loss = (self.d_loss_real + self.d_loss_fake)/2
+
+
+        ########################################################################################################
+        self.g_loss_sum = tf.summary.scalar("g_loss", self.g_loss)
+        # self.g_sum = tf.summary.merge([self.g_loss])
+        self.d_loss_real_sum = tf.summary.scalar("d_loss_real", self.d_loss_real)
+        self.d_loss_fake_sum = tf.summary.scalar("d_loss_fake", self.d_loss_fake)
+        self.d_loss_sum = tf.summary.scalar("d_loss", self.d_loss)
+        self.d_sum = tf.summary.merge([self.d_loss_real_sum, self.d_loss_fake_sum, self.d_loss_sum])
+
+
+        ########################################################################################################
+        self.curved_test = tf.placeholder(tf.float32,
+                                     [None, None, None,
+                                      self.input_c_dim], name='curved_test')
+        self.curved_to_straight_test = self.generator(self.curved_test, self.options, True, name="generatorC2S")
+        ########################################################################################################
+        t_vars = tf.trainable_variables()
+        self.d_vars = [var for var in t_vars if 'discriminator' in var.name]
+        self.g_vars = [var for var in t_vars if 'generator' in var.name]
+        for var in t_vars: print(var.name)
+
+    def train_kong(self, args):
+        print("train start count time")
+        train_start_time = time.time()
+
+        """Train cyclegan"""
+        self.Kong_copy_current_py(args.name) ### 把目前的設定存一份起來！
+
+        ### 這裡也花時間，大概30秒左右 建立完 lr, d_optim, g_optim
+        self.lr = tf.placeholder(tf.float32, None, name='learning_rate')
+        self.d_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1).minimize(self.d_loss, var_list=self.d_vars)
+        self.g_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1).minimize(self.g_loss, var_list=self.g_vars)
+        print("finish optimizer cost_time:",time.time() - train_start_time)
+        
+        ### 這兩步還好，只花了2秒鐘
+        init_op = tf.global_variables_initializer() 
+        self.sess.run(init_op)
+        print("finish global_variable_initializer cost_time:",time.time() - train_start_time) 
+        
+        self.writer = tf.summary.FileWriter(args.log_dir, self.sess.graph) ### 這個最花時間 大概70幾秒
+        print("finish FileWriter cost_time:",time.time() - train_start_time)
+        
+        counter = 1
+        start_time = time.time()
+        import cv2
+        if args.continue_train:
+            if self.load(args.checkpoint_dir):
+                print(" [*] Load SUCCESS")
+            else:
+                print(" [!] Load failed...")
+
+        print("train before epoch cost time:",time.time()-train_start_time)
+
+        for epoch in range(args.epoch):
+            dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainA'))
+            dataB = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainB'))
+
+            batch_idxs = min(min(len(dataA), len(dataB)), args.train_size) // self.batch_size
+            lr = args.lr if epoch < args.epoch_step else args.lr*(args.epoch-epoch)/(args.epoch-args.epoch_step)
+
+            for idx in range(0, batch_idxs):
+                batch_files = list(zip(dataA[idx * self.batch_size : (idx + 1) * self.batch_size],
+                                       dataB[idx * self.batch_size : (idx + 1) * self.batch_size]))
+                batch_images = [load_train_data(batch_file, args.load_size, self.image_size_height, self.image_size_width) for batch_file in batch_files]
+                batch_images = np.array(batch_images).astype(np.float32)
+
+                # Update G network and record fake outputs
+                #fake_B, _, summary_str = self.sess.run(
+                fake_curved_to_straight,_ = self.sess.run(
+                    [self.curved_to_straight, self.g_optim],  #[self.fake_A, self.fake_B, self.g_optim, self.g_sum],
+                    feed_dict={self.curved_concat_straight: batch_images, self.lr: lr})
+                #self.writer.add_summary(summary_str, counter)
+
+
+                # Update D network
+                db_curved_img = batch_images[0,...,0:self.input_c_dim]
+                # print(db_curved_img)
+                # print(db_curved_img.shape)
+                cv2.imshow("db_curved_img",db_curved_img)
+
+                fake_curved_to_straight_img = fake_curved_to_straight[0]
+                # print("fake_curved_to_straight_img",fake_curved_to_straight_img)
+                # print("fake_curved_to_straight_img.shape",fake_curved_to_straight_img.shape)
+                # cv2.imshow("fake_curved_to_straight_img",fake_curved_to_straight_img)
+
+
+                fake_input_pair_img = np.dstack( (db_curved_img,fake_curved_to_straight_img) )
+                fake_input_pair_img = fake_input_pair_img.reshape(1,self.image_size_height,self.image_size_width,self.input_c_dim+self.input_c_dim)
+                # print("fake_input_pair_img",fake_input_pair_img)
+                # print("fake_input_pair_img.shape",fake_input_pair_img.shape)
+                # cv2.waitKey(0)
+                
+                _, summary_str = self.sess.run(
+                    [self.d_optim, self.d_sum],
+                    feed_dict={self.curved_concat_straight: batch_images,
+                               self.fake_input_pair_img: fake_input_pair_img,
+                               self.lr: lr})
+                self.writer.add_summary(summary_str, counter)
+
+                # counter += 1 原始寫這邊，我把它調到下面去囉
+                cost_time = time.time() - start_time
+                hour = cost_time//3600 ; minute = cost_time%3600//60 ; second = cost_time%3600%60
+                print(("Epoch: [%2d] [%4d/%4d] time: %4.4f, %2d:%02d:%02d counter:%d" % (
+                    epoch, idx, batch_idxs, time.time() - start_time,hour, minute, second, counter)))
+
+                if np.mod(counter, args.print_freq) == 1:#1:
+                    #self.sample_model(args.sample_dir, epoch, idx, args,  counter) ### sample目的地資料夾、存圖時紀錄epoch
+                    #self.Kong_sample_patch_version(args.sample_dir, counter,5)  ### sample目的地資料夾、存圖時紀錄counter
+                    self.Kong_sample_new_model(args.sample_dir, counter,4)  ### sample目的地資料夾、存圖時紀錄counter
+
+                if np.mod(counter, args.save_freq) == 1:#2:
+                    self.save(args.checkpoint_dir, counter)
+
+                counter += 1  ### 調到這裡
+
+
 
 
     def _build_model(self):
@@ -292,6 +435,14 @@ class cyclegan(object):
         #save_images(fake_A, [ 1, img_num ], './{}/to_curved/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
         save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
+    def Kong_sample_seperately_new_model(self, name, batch_files, img_num , counter):
+        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files]
+        #fake_A, fake_B = self.sess.run( [self.fake_A, self.fake_B], feed_dict={self.real_data: sample_images})
+        fake_B = self.sess.run( self.curved_to_straight, feed_dict={self.curved_concat_straight: sample_images})
+        #save_images(fake_A, [ 1, img_num ], './{}/to_curved/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
+        save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
+
+
     def Kong_sample_patch_version(self,sample_dir,counter):
         ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
         self.Kong_sample_seperately("big", self.Kong_test_dataPairs[5:10], 5, counter)
@@ -302,6 +453,11 @@ class cyclegan(object):
     def Kong_sample(self,sample_dir,counter,sample_amount = 1):
         ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
         self.Kong_sample_seperately("crop-accurate", self.Kong_test_dataPairs[ :sample_amount], sample_amount, counter)
+
+    def Kong_sample_new_model(self,sample_dir,counter,sample_amount = 1):
+        ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
+        self.Kong_sample_seperately_new_model("crop-accurate", self.Kong_test_dataPairs[ :sample_amount], sample_amount, counter)
+
 
     def sample_model(self, sample_dir, epoch, idx,args, counter): ### counter自己加的
         dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/testA'))

@@ -292,21 +292,21 @@ np.random.seed(19)
 # image_size_width = 304
 # image_size_height = 472
 
-####################################################################################
-### wei-crop-accurate_w=304,h=472_mix_x328
-name = "wei-crop-accurate_w=304,h=472_mix_x328"
-phase = "train"
-# ## train完後test
-# phase = "test"
+# ####################################################################################
+# ### wei-crop-accurate_w=304,h=472_mix_x328
+# name = "wei-crop-accurate_w=304,h=472_mix_x328"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
 
-epoch = 527 #800
+# epoch = 527 #800
 
-save_freq = 20000 ### 最多好像存5次
-print_freq = 100
-continue_train = False
-# continue_train = True
-image_size_width = 304
-image_size_height = 472
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
 
 ####################################################################################
 ### wei-crop-accurate_w=304,h=472_left-top_x82
@@ -323,6 +323,23 @@ image_size_height = 472
 # # continue_train = True
 # image_size_width = 304
 # image_size_height = 472
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_mix_x328_new_model
+name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model"
+phase = "train"
+# ## train完後test
+# phase = "test"
+
+epoch = 527 #800
+
+save_freq = 20000 ### 最多好像存5次
+print_freq = 100
+continue_train = False
+# continue_train = True
+image_size_width = 304
+image_size_height = 472
+
 ####################################################################################
 dataset_dir = name
 checkpoint_dir = name + "/checkpoint"
@@ -399,8 +416,9 @@ def main(_):
     tfconfig.gpu_options.allow_growth = True
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
-        model.train(args) if args.phase == 'train' \
-            else model.test(args)
+        #model.train(args) if args.phase == 'train' \
+        model.train_kong(args) if args.phase == 'train' \
+             else model.test(args)
 
 if __name__ == '__main__':
     # print(tf.__version__)
