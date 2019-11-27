@@ -135,6 +135,8 @@ def generator_resnet(image, options, reuse=False, name="generator"):
 
         return pred
 
+def abs_sum(in_, target):
+    return tf.reduce_sum(tf.abs(in_ - target))
 
 def abs_criterion(in_, target):
     return tf.reduce_mean(tf.abs(in_ - target))
