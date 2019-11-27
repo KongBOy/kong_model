@@ -9,6 +9,8 @@ from collections import namedtuple
 from module import *
 from utils import *
 
+import cv2
+
 
 class cyclegan(object):
     def __init__(self, sess, args):
@@ -55,23 +57,21 @@ class cyclegan(object):
 
     
     def _build_kong_model(self):
-        self.curved_concat_straight = tf.placeholder(tf.float32,
-                                                     [None, None, None, self.input_c_dim + self.output_c_dim],
-                                                      name = "curved_concat_straight")
+        ####################################################################################################################################
+        ### Generator
+        self.curved_concat_straight = tf.placeholder(tf.float32,[None, None, None, self.input_c_dim + self.output_c_dim],name = "curved_concat_straight")
         self.curved   = self.curved_concat_straight[:,:,:,                 :self.input_c_dim ]
         self.straight = self.curved_concat_straight[:,:,:, self.input_c_dim:self.input_c_dim + self.input_c_dim]
-        
         self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
-
-        # self.curved_to_straight_concat_curved = tf.concat([self.curved_to_straight, self.curved],3)
         self.curved_to_straight_concat_curved = tf.concat([self.curved, self.curved_to_straight],3)
-        self.fake_pair = self.discriminator(self.curved_to_straight_concat_curved, self.options, reuse=False,  name="discriminator")
-        self.g_loss      = self.criterionGAN(self.fake_pair, tf.ones_like(self.fake_pair)) + \
-                           self.L1_lambda* abs_criterion(self.straight, self.curved_to_straight)
+        self.fake_pair   = self.discriminator(self.curved_to_straight_concat_curved, self.options, reuse=False,  name="discriminator")
+        self.g_adv_loss  = self.criterionGAN(self.fake_pair, tf.ones_like(self.fake_pair))
+        self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
+        self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
+
         ####################################################################################################################################
-        self.fake_input_pair_img = tf.placeholder(tf.float32,
-                                            [None, None, None, self.input_c_dim + self.input_c_dim],
-                                            name = "fake_input_pair")
+        ### Discriminator
+        self.fake_input_pair_img = tf.placeholder(tf.float32, [None, None, None, self.input_c_dim + self.input_c_dim], name = "fake_input_pair")
         self.fake_input_pair_score = self.discriminator(self.fake_input_pair_img,        self.options, reuse=True,   name="discriminator")
         self.real_pair             = self.discriminator(self.curved_concat_straight, self.options, reuse=True,   name="discriminator")
         
@@ -80,20 +80,29 @@ class cyclegan(object):
         self.d_loss_fake = self.criterionGAN(self.fake_pair, tf.zeros_like(self.fake_input_pair_score)) 
         self.d_loss = (self.d_loss_real + self.d_loss_fake)/2
 
-
         ########################################################################################################
+        ### Tensorboard
+        self.g_adv_loss_sum = tf.summary.scalar("g_adv_loss", self.g_adv_loss)
+        self.g_mse_loss_sum = tf.summary.scalar("g_mse_loss", self.g_mse_loss)
         self.g_loss_sum = tf.summary.scalar("g_loss", self.g_loss)
-        # self.g_sum = tf.summary.merge([self.g_loss])
+        self.g_sum = tf.summary.merge([self.g_adv_loss_sum, self.g_mse_loss_sum, self.g_loss_sum])
         self.d_loss_real_sum = tf.summary.scalar("d_loss_real", self.d_loss_real)
         self.d_loss_fake_sum = tf.summary.scalar("d_loss_fake", self.d_loss_fake)
         self.d_loss_sum = tf.summary.scalar("d_loss", self.d_loss)
         self.d_sum = tf.summary.merge([self.d_loss_real_sum, self.d_loss_fake_sum, self.d_loss_sum])
+        ### Save to npy
+        self.counter_np     = np.array([])
+        self.g_adv_loss_np  = np.array([])
+        self.g_mse_loss_np  = np.array([])
+        self.g_loss_np      = np.array([])
+        self.d_loss_real_np = np.array([])
+        self.d_loss_fake_np = np.array([])
+        self.d_loss_np      = np.array([])
 
 
         ########################################################################################################
         self.curved_test = tf.placeholder(tf.float32,
-                                     [None, None, None,
-                                      self.input_c_dim], name='curved_test')
+                                     [None, None, None,self.input_c_dim], name='curved_test')
         self.curved_to_straight_test = self.generator(self.curved_test, self.options, True, name="generatorC2S")
         ########################################################################################################
         t_vars = tf.trainable_variables()
@@ -146,19 +155,19 @@ class cyclegan(object):
                 batch_images = [load_train_data(batch_file, args.load_size, self.image_size_height, self.image_size_width) for batch_file in batch_files]
                 batch_images = np.array(batch_images).astype(np.float32)
 
+                #################################################################################################################
                 # Update G network and record fake outputs
-                #fake_B, _, summary_str = self.sess.run(
-                fake_curved_to_straight,_ = self.sess.run(
-                    [self.curved_to_straight, self.g_optim],  #[self.fake_A, self.fake_B, self.g_optim, self.g_sum],
+                fake_curved_to_straight,_, summary_str = self.sess.run(
+                    [self.curved_to_straight, self.g_optim, self.g_sum],  #[self.fake_A, self.fake_B, self.g_optim, self.g_sum],
                     feed_dict={self.curved_concat_straight: batch_images, self.lr: lr})
-                #self.writer.add_summary(summary_str, counter)
+                self.writer.add_summary(summary_str, counter)
 
-
+                #################################################################################################################
                 # Update D network
                 db_curved_img = batch_images[0,...,0:self.input_c_dim]
                 # print(db_curved_img)
                 # print(db_curved_img.shape)
-                cv2.imshow("db_curved_img",db_curved_img)
+                # cv2.imshow("db_curved_img",db_curved_img)
 
                 fake_curved_to_straight_img = fake_curved_to_straight[0]
                 # print("fake_curved_to_straight_img",fake_curved_to_straight_img)
@@ -189,6 +198,7 @@ class cyclegan(object):
                     #self.sample_model(args.sample_dir, epoch, idx, args,  counter) ### sample目的地資料夾、存圖時紀錄epoch
                     #self.Kong_sample_patch_version(args.sample_dir, counter,5)  ### sample目的地資料夾、存圖時紀錄counter
                     self.Kong_sample_new_model(args.sample_dir, counter,4)  ### sample目的地資料夾、存圖時紀錄counter
+                    # self.Kong_save_loss(batch_images,fake_input_pair_img,counter)
 
                 if np.mod(counter, args.save_freq) == 1:#2:
                     self.save(args.checkpoint_dir, counter)
@@ -416,6 +426,16 @@ class cyclegan(object):
         shutil.copy("ops.py",    dst_dir+"/ops.py")
         shutil.copy("utils.py",  dst_dir+"/utils.py")
 
+    def Kong_save_loss(self,batch_images,fake_input_pair_img,counter):
+        g_adv_loss, g_mse_loss, g_loss, d_loss_real, d_loss_fake, d_loss = self.sess.run([self.g_adv_loss,self.g_mse_loss,self.g_loss, self.d_loss_real,self.d_loss_fake,self.d_loss],feed_dict={self.curved_concat_straight:batch_images,self.fake_input_pair_img:fake_input_pair_img})
+        self.counter_np     = np.append( self.counter_np    , int(counter))
+        self.g_adv_loss_np  = np.append( self.g_adv_loss_np , g_adv_loss  )
+        self.g_mse_loss_np  = np.append( self.g_mse_loss_np , g_mse_loss  )
+        self.g_loss_np      = np.append( self.g_loss_np     , g_loss      )
+        self.d_loss_real_np = np.append( self.d_loss_real_np, d_loss_real )
+        self.d_loss_fake_np = np.append( self.d_loss_fake_np, d_loss_fake )
+        self.d_loss_np      = np.append( self.d_loss_np     , d_loss      )
+        # print(g_adv_loss, g_mse_loss, g_loss, d_loss_real, d_loss_fake, d_loss)
 
     def Kong_load_test_dataset(self):
         dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/testA'))
@@ -436,11 +456,13 @@ class cyclegan(object):
         save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
     def Kong_sample_seperately_new_model(self, name, batch_files, img_num , counter):
-        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files]
-        #fake_A, fake_B = self.sess.run( [self.fake_A, self.fake_B], feed_dict={self.real_data: sample_images})
-        fake_B = self.sess.run( self.curved_to_straight, feed_dict={self.curved_concat_straight: sample_images})
-        #save_images(fake_A, [ 1, img_num ], './{}/to_curved/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
-        save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
+        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files] ### sample_images是list，shape長得像 (4, 472, 304, "6")
+        curved_img = np.array(sample_images)[:,:,:,0:self.input_c_dim]
+        fake_B = self.sess.run( self.curved_to_straight, feed_dict={self.curved_concat_straight: sample_images}) ### fake_B.shape (4, 472, 304, 3)
+        result_img = np.concatenate( (curved_img,fake_B),axis=0 )
+        #print("result_img.shape",result_img.shape)
+        # save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
+        save_images(result_img, [ 2, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
 
     def Kong_sample_patch_version(self,sample_dir,counter):
