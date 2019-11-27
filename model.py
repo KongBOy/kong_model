@@ -82,15 +82,15 @@ class cyclegan(object):
 
         ########################################################################################################
         ### Tensorboard
-        self.g_adv_loss_sum = tf.summary.scalar("g_adv_loss", self.g_adv_loss)
-        self.g_mse_loss_sum = tf.summary.scalar("g_mse_loss", self.g_mse_loss)
-        self.g_loss_sum = tf.summary.scalar("g_loss", self.g_loss)
+        self.g_adv_loss_sum = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
+        self.g_mse_loss_sum = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss*self.L1_lambda)
+        self.g_loss_sum = tf.summary.scalar("3_g_loss", self.g_loss)
         self.g_sum = tf.summary.merge([self.g_adv_loss_sum, self.g_mse_loss_sum, self.g_loss_sum])
-        self.d_loss_real_sum = tf.summary.scalar("d_loss_real", self.d_loss_real)
-        self.d_loss_fake_sum = tf.summary.scalar("d_loss_fake", self.d_loss_fake)
-        self.d_loss_sum = tf.summary.scalar("d_loss", self.d_loss)
+        self.d_loss_real_sum = tf.summary.scalar("4_d_loss_real", self.d_loss_real)
+        self.d_loss_fake_sum = tf.summary.scalar("5_d_loss_fake", self.d_loss_fake)
+        self.d_loss_sum = tf.summary.scalar("6_d_loss", self.d_loss)
         self.d_sum = tf.summary.merge([self.d_loss_real_sum, self.d_loss_fake_sum, self.d_loss_sum])
-        ### Save to npy
+        ### Save to npy 先留著不刪除，但因耗時目前應該是不用它囉
         self.counter_np     = np.array([])
         self.g_adv_loss_np  = np.array([])
         self.g_mse_loss_np  = np.array([])
@@ -426,7 +426,7 @@ class cyclegan(object):
         shutil.copy("ops.py",    dst_dir+"/ops.py")
         shutil.copy("utils.py",  dst_dir+"/utils.py")
 
-    def Kong_save_loss(self,batch_images,fake_input_pair_img,counter):
+    def Kong_save_loss(self,batch_images,fake_input_pair_img,counter): ### 耗時間所以不用，但先留著當寫法參考，反正不呼叫就好
         g_adv_loss, g_mse_loss, g_loss, d_loss_real, d_loss_fake, d_loss = self.sess.run([self.g_adv_loss,self.g_mse_loss,self.g_loss, self.d_loss_real,self.d_loss_fake,self.d_loss],feed_dict={self.curved_concat_straight:batch_images,self.fake_input_pair_img:fake_input_pair_img})
         self.counter_np     = np.append( self.counter_np    , int(counter))
         self.g_adv_loss_np  = np.append( self.g_adv_loss_np , g_adv_loss  )

@@ -336,6 +336,7 @@ epoch = 527 #800
 save_freq = 20000 ### 最多好像存5次
 print_freq = 100
 continue_train = False
+lambda_kong = 3
 # continue_train = True
 image_size_width = 304
 image_size_height = 472
@@ -373,7 +374,7 @@ class Kong_args():
         self.checkpoint_dir = checkpoint_dir #'./checkpoint' ### models are saved here
         self.sample_dir = sample_dir #'./sample' ### sample are saved here
         self.test_dir = test_dir #'./test' ###'test sample are saved here')
-        self.L1_lambda =10.0 ###'weight on L1 term in objective')
+        self.L1_lambda = lambda_kong # 10.0 ###'weight on L1 term in objective')
         self.use_resnet =True ###'generation network using reidule block')
         self.use_lsgan =True ###gan loss defined in lsgan')
         self.max_size =50 ###max size of image pool, 0 means do not use image pool')
