@@ -190,7 +190,7 @@ class cyclegan(object):
                     epoch, idx, batch_idxs, time.time() - start_time,hour, minute, second, counter)))
 
                 if np.mod(counter, args.print_freq) == 1:#1:
-                    self.Kong_sample_new_model(args.sample_dir, counter,4)  ### sample目的地資料夾、存圖時紀錄counter
+                    self.Kong_sample_new_model(args.sample_dir, counter)  ### sample目的地資料夾、存圖時紀錄counter
                     # self.Kong_save_loss(batch_images,fake_input_pair_img,counter)
 
                 if np.mod(counter, args.save_freq) == 1:#2:
@@ -448,16 +448,15 @@ class cyclegan(object):
         #save_images(fake_A, [ 1, img_num ], './{}/to_curved/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
         save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
-    def Kong_sample_seperately_new_model(self, name, batch_files, img_num , counter):
-        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files] ### sample_images是list，shape長得像 (4, 472, 304, "6")
+    def Kong_sample_seperately_new_model(self, name, batch_files, counter):
+        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files] ### sample_images是list，shape長得像 (8, 472, 304, "6")
         curved_img   = np.array(sample_images)[:,:,:,0:self.input_c_dim]
-        straight_img = np.array(sample_images)[:,:,:,self.input_c_dim:self.input_c_dim+self.input_c_dim]
-        fake_B = self.sess.run( self.curved_to_straight, feed_dict={self.curved_concat_straight: sample_images}) ### fake_B.shape (4, 472, 304, 3)
-        result_img = np.concatenate( (curved_img,fake_B),axis=0 )
+        straight_img = np.array(sample_images)[:,:,:,  self.input_c_dim:self.input_c_dim+self.input_c_dim]
+        curved_to_straight = self.sess.run( self.curved_to_straight, feed_dict={self.curved_concat_straight: sample_images}) ### curved_to_straight.shape (8, 472, 304, 3)
+        result_img = np.concatenate( (curved_img,curved_to_straight),      axis=0 )
         result_img = np.concatenate( (result_img,straight_img),axis=0 )
         #print("result_img.shape",result_img.shape)
-        # save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
-        save_images(result_img, [ 3, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
+        save_images(result_img, [ 3, len(sample_images) ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
 
     def Kong_sample_patch_version(self,sample_dir,counter):
@@ -471,9 +470,9 @@ class cyclegan(object):
         ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
         self.Kong_sample_seperately("crop-accurate", self.Kong_test_dataPairs[ :sample_amount], sample_amount, counter)
 
-    def Kong_sample_new_model(self,sample_dir,counter,sample_amount = 1):
+    def Kong_sample_new_model(self,sample_dir,counter):
         ### 注意，好像不能再 training 時 用test_A或test_B 會失敗這樣子，所以只好用 sample的方式囉！就成功了～
-        self.Kong_sample_seperately_new_model("crop-accurate", self.Kong_test_dataPairs[ :sample_amount], sample_amount, counter)
+        self.Kong_sample_seperately_new_model("crop-accurate", self.Kong_test_dataPairs, counter)
 
 
     def sample_model(self, sample_dir, epoch, idx,args, counter): ### counter自己加的
