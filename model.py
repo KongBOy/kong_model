@@ -150,6 +150,8 @@ class cyclegan(object):
             lr = args.lr if epoch < args.epoch_step else args.lr*(args.epoch-epoch)/(args.epoch-args.epoch_step)
 
             for idx in range(0, batch_idxs):
+                #################################################################################################################
+                # Load Batch data
                 batch_files = list(zip(dataA[idx * self.batch_size : (idx + 1) * self.batch_size],
                                        dataB[idx * self.batch_size : (idx + 1) * self.batch_size]))
                 batch_images = [load_train_data(batch_file, args.load_size, self.image_size_height, self.image_size_width) for batch_file in batch_files]
@@ -165,22 +167,13 @@ class cyclegan(object):
                 #################################################################################################################
                 # Update D network
                 db_curved_img = batch_images[0,...,0:self.input_c_dim]
-                # print(db_curved_img)
-                # print(db_curved_img.shape)
                 # cv2.imshow("db_curved_img",db_curved_img)
-
                 fake_curved_to_straight_img = fake_curved_to_straight[0]
-                # print("fake_curved_to_straight_img",fake_curved_to_straight_img)
-                # print("fake_curved_to_straight_img.shape",fake_curved_to_straight_img.shape)
                 # cv2.imshow("fake_curved_to_straight_img",fake_curved_to_straight_img)
-
-
                 fake_input_pair_img = np.dstack( (db_curved_img,fake_curved_to_straight_img) )
                 fake_input_pair_img = fake_input_pair_img.reshape(1,self.image_size_height,self.image_size_width,self.input_c_dim+self.input_c_dim)
-                # print("fake_input_pair_img",fake_input_pair_img)
                 # print("fake_input_pair_img.shape",fake_input_pair_img.shape)
                 # cv2.waitKey(0)
-                
                 _, summary_str = self.sess.run(
                     [self.d_optim, self.d_sum],
                     feed_dict={self.curved_concat_straight: batch_images,
@@ -188,6 +181,7 @@ class cyclegan(object):
                                self.lr: lr})
                 self.writer.add_summary(summary_str, counter)
 
+                #################################################################################################################
                 # counter += 1 原始寫這邊，我把它調到下面去囉
                 cost_time = time.time() - start_time
                 hour = cost_time//3600 ; minute = cost_time%3600//60 ; second = cost_time%3600%60
@@ -195,8 +189,6 @@ class cyclegan(object):
                     epoch, idx, batch_idxs, time.time() - start_time,hour, minute, second, counter)))
 
                 if np.mod(counter, args.print_freq) == 1:#1:
-                    #self.sample_model(args.sample_dir, epoch, idx, args,  counter) ### sample目的地資料夾、存圖時紀錄epoch
-                    #self.Kong_sample_patch_version(args.sample_dir, counter,5)  ### sample目的地資料夾、存圖時紀錄counter
                     self.Kong_sample_new_model(args.sample_dir, counter,4)  ### sample目的地資料夾、存圖時紀錄counter
                     # self.Kong_save_loss(batch_images,fake_input_pair_img,counter)
 
@@ -457,12 +449,14 @@ class cyclegan(object):
 
     def Kong_sample_seperately_new_model(self, name, batch_files, img_num , counter):
         sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files] ### sample_images是list，shape長得像 (4, 472, 304, "6")
-        curved_img = np.array(sample_images)[:,:,:,0:self.input_c_dim]
+        curved_img   = np.array(sample_images)[:,:,:,0:self.input_c_dim]
+        straight_img = np.array(sample_images)[:,:,:,self.input_c_dim:self.input_c_dim+self.input_c_dim]
         fake_B = self.sess.run( self.curved_to_straight, feed_dict={self.curved_concat_straight: sample_images}) ### fake_B.shape (4, 472, 304, 3)
         result_img = np.concatenate( (curved_img,fake_B),axis=0 )
+        result_img = np.concatenate( (result_img,straight_img),axis=0 )
         #print("result_img.shape",result_img.shape)
         # save_images(fake_B, [ 1, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
-        save_images(result_img, [ 2, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
+        save_images(result_img, [ 3, img_num ], './{}/to_straight/{}/{:02d}.jpg'.format(self.Kong_sample_dir, name, counter))
 
 
     def Kong_sample_patch_version(self,sample_dir,counter):
@@ -499,7 +493,7 @@ class cyclegan(object):
             feed_dict={self.real_data: sample_images}
         )
 
-        ### 原本的，用epoch 和 idx，但我想看的是 更新幾次配合img，還要自己轉很麻煩
+        ### 原本的，用epoch 和 idx，但我想看的是 更新幾次配合img，用epoch和idx的話還要自己轉很麻煩所以直接改用counter
         # save_images(fake_A, [self.batch_size, 1],
         #             './{}/A_{:02d}_{:04d}.jpg'.format(sample_dir, epoch, idx))
         # save_images(fake_B, [self.batch_size, 1],
