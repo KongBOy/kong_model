@@ -244,6 +244,7 @@ np.random.seed(19)
 ####################################################################################
 ### 08a 加入 10張格線影像 且 no-shuffle
 ## wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle
+
 # name = "wei_focus_just_text_96x96_08a_add-line-img_x10_no-shuffle"
 # phase = "train"
 # # ## train完後test
@@ -294,6 +295,72 @@ image_size_height = 472
 
 
 ####################################################################################
+### 09 試試看no-cycle
+### wei-crop-accurate_w=304,h=472_mix
+# name = "wei-crop-accurate_w=304,h=472_mix"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 527 #800
+
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
+
+# ####################################################################################
+# ### wei-crop-accurate_w=304,h=472_mix_x328
+# name = "wei-crop-accurate_w=304,h=472_mix_x328"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 527 #800
+
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_left-top_x82
+# name = "wei-crop-accurate_w=304,h=472_left-top_x82"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 527 #800
+
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test
+name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test"
+phase = "train"
+# ## train完後test
+# phase = "test"
+
+epoch = 600 #800
+
+save_freq = 20000 ### 最多好像存5次
+print_freq = 100
+continue_train = False
+lambda_kong = 3
+# continue_train = True
+image_size_width = 304
+image_size_height = 472
+
+####################################################################################
 dataset_dir = name
 checkpoint_dir = name + "/checkpoint"
 sample_dir = name + "/sample"
@@ -326,7 +393,7 @@ class Kong_args():
         self.checkpoint_dir = checkpoint_dir #'./checkpoint' ### models are saved here
         self.sample_dir = sample_dir #'./sample' ### sample are saved here
         self.test_dir = test_dir #'./test' ###'test sample are saved here')
-        self.L1_lambda =10.0 ###'weight on L1 term in objective')
+        self.L1_lambda = lambda_kong # 10.0 ###'weight on L1 term in objective')
         self.use_resnet =True ###'generation network using reidule block')
         self.use_lsgan =True ###gan loss defined in lsgan')
         self.max_size =50 ###max size of image pool, 0 means do not use image pool')
@@ -348,19 +415,19 @@ def main(_):
         os.makedirs(args.sample_dir)
         # os.makedirs(args.sample_dir +"/A")
         # os.makedirs(args.sample_dir +"/B")
-        
-        ### Kong_sample_patch_version
-        os.makedirs(args.sample_dir +"/to_curved/big")
-        os.makedirs(args.sample_dir +"/to_curved/big-left-top")
-        os.makedirs(args.sample_dir +"/to_curved/small-seen")
-        os.makedirs(args.sample_dir +"/to_curved/small-unseen")
-        os.makedirs(args.sample_dir +"/to_straight/big")
-        os.makedirs(args.sample_dir +"/to_straight/big-left-top")
-        os.makedirs(args.sample_dir +"/to_straight/small-seen")
-        os.makedirs(args.sample_dir +"/to_straight/small-unseen")
 
-        ### Kong_sample_crop_accurate
-        os.makedirs(args.sample_dir +"/to_curved/crop-accurate")
+        ### 因為寫在function裡會一直被呼叫到，所以我才拉出來main寫喔！
+        # os.makedirs(args.sample_dir +"/to_curved/big")
+        # os.makedirs(args.sample_dir +"/to_curved/big-left-top")
+        # os.makedirs(args.sample_dir +"/to_curved/small-seen")
+        # os.makedirs(args.sample_dir +"/to_curved/small-unseen")
+        # os.makedirs(args.sample_dir +"/to_straight/big")
+        # os.makedirs(args.sample_dir +"/to_straight/big-left-top")
+        # os.makedirs(args.sample_dir +"/to_straight/small-seen")
+        # os.makedirs(args.sample_dir +"/to_straight/small-unseen")
+
+        ### 因為寫在function裡會一直被呼叫到，所以我才拉出來main寫喔！
+
         os.makedirs(args.sample_dir +"/to_straight/crop-accurate")
 
     if not os.path.exists(args.test_dir):
@@ -370,8 +437,9 @@ def main(_):
     tfconfig.gpu_options.allow_growth = True
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
-        model.train(args) if args.phase == 'train' \
-            else model.test(args)
+        #model.train(args) if args.phase == 'train' \
+        model.train_kong(args) if args.phase == 'train' \
+             else model.test(args)
 
 if __name__ == '__main__':
     # print(tf.__version__)
