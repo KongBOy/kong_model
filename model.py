@@ -93,11 +93,11 @@ class cyclegan(object):
         self.curved   = self.curved_concat_straight[:,:,:,                 :self.input_c_dim ]
         self.straight = self.curved_concat_straight[:,:,:, self.input_c_dim:self.input_c_dim + self.input_c_dim]
         self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
-        self.gen_pair    = tf.concat([self.curved, self.curved_to_straight],3)
+        self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
 
+        self.gen_pair    = tf.concat([self.curved, self.curved_to_straight],3)
         self.gen_pair_score   = self.discriminator(self.gen_pair, self.options, reuse=False,  name="discriminator")
         self.g_adv_loss  = self.criterionGAN(self.gen_pair_score, tf.ones_like(self.gen_pair_score))
-        self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
         self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
         ####################################################################################################################################
         ### Discriminator
