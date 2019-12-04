@@ -355,7 +355,7 @@ epoch = 600 #800
 save_freq = 20000 ### 最多好像存5次
 print_freq = 100
 continue_train = False
-lambda_kong = 3
+lambda_kong = 10
 # continue_train = True
 image_size_width = 304
 image_size_height = 472
@@ -437,7 +437,7 @@ def main(_):
     tfconfig.gpu_options.allow_growth = True
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
-        #model.train(args) if args.phase == 'train' \
+        # model.train(args) if args.phase == 'train' \
         # model.train_kong(args) if args.phase == 'train' \
         model.train_kong_no_discriminator(args) if args.phase == 'train' \
              else model.test(args)

@@ -68,7 +68,7 @@ class cyclegan(object):
         self.g_loss      = self.L1_lambda * self.g_mse_loss
         ########################################################################################################
         ### Tensorboard
-        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss*self.L1_lambda)
+        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss)
         self.g_loss_sum      = tf.summary.scalar("3_g_loss", self.g_loss)
         self.g_sum           = tf.summary.merge([ self.g_mse_loss_sum, self.g_loss_sum])
         ### Save to npy 先留著不刪除，但因耗時目前應該是不用它囉
