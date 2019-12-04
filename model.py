@@ -139,7 +139,7 @@ def _build_kong_model_no_discriminator(self):
         ########################################################################################################
         ### Tensorboard
         self.g_adv_loss_sum  = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
-        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss*self.L1_lambda)
+        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss)
         self.g_loss_sum      = tf.summary.scalar("3_g_loss", self.g_loss)
         self.g_sum           = tf.summary.merge([self.g_adv_loss_sum, self.g_mse_loss_sum, self.g_loss_sum])
         self.d_loss_real_sum = tf.summary.scalar("4_d_loss_real", self.d_loss_real)
@@ -309,20 +309,20 @@ def _build_kong_model_no_discriminator(self):
 
                 #################################################################################################################
                 # Update D network
-                db_curved_img = batch_images[0,...,0:self.input_c_dim]
+                # db_curved_img = batch_images[0,...,0:self.input_c_dim]
                 # cv2.imshow("db_curved_img",db_curved_img)
-                fake_curved_to_straight_img = fake_curved_to_straight[0]
+                # fake_curved_to_straight_img = fake_curved_to_straight[0]
                 # cv2.imshow("fake_curved_to_straight_img",fake_curved_to_straight_img)
-                fake_input_pair_img = np.dstack( (db_curved_img,fake_curved_to_straight_img) )
-                fake_input_pair_img = fake_input_pair_img.reshape(1,self.image_size_height,self.image_size_width,self.input_c_dim+self.input_c_dim)
+                # fake_input_pair_img = np.dstack( (db_curved_img,fake_curved_to_straight_img) )
+                # fake_input_pair_img = fake_input_pair_img.reshape(1,self.image_size_height,self.image_size_width,self.input_c_dim+self.input_c_dim)
                 # print("fake_input_pair_img.shape",fake_input_pair_img.shape)
                 # cv2.waitKey(0)
-                _, summary_str = self.sess.run(
-                    [self.d_optim, self.d_sum],
-                    feed_dict={self.curved_concat_straight: batch_images,
-                               self.fake_pair: fake_input_pair_img,
-                               self.lr: lr})
-                self.writer.add_summary(summary_str, counter)
+                # _, summary_str = self.sess.run(
+                    # [self.d_optim, self.d_sum],
+                    # feed_dict={self.curved_concat_straight: batch_images,
+                            #    self.fake_pair: fake_input_pair_img,
+                            #    self.lr: lr})
+                # self.writer.add_summary(summary_str, counter)
 
                 #################################################################################################################
                 # counter += 1 原始寫這邊，我把它調到下面去囉
