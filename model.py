@@ -43,7 +43,8 @@ class cyclegan(object):
                                       args.phase == 'train'))
         
         build_model_start_time = time.time()
-        self._build_kong_model()
+        self._build_kong_model_no_discriminator()
+        # self._build_kong_model()
         # self._build_model()
         print("_build_model_cost_time:",time.time()-build_model_start_time)
         self.saver = tf.train.Saver()
@@ -55,52 +56,25 @@ class cyclegan(object):
         self.Kong_test_dataPairs = None
         self.Kong_load_test_dataset()
 
-def _build_kong_model_no_discriminator(self):
+    def _build_kong_model_no_discriminator(self):
         ####################################################################################################################################
         ### Generator
         self.curved_concat_straight = tf.placeholder(tf.float32,[None, None, None, self.input_c_dim + self.output_c_dim],name = "curved_concat_straight")
         self.curved   = self.curved_concat_straight[:,:,:,                 :self.input_c_dim ]
         self.straight = self.curved_concat_straight[:,:,:, self.input_c_dim:self.input_c_dim + self.input_c_dim]
         self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
-        # self.gen_pair    = tf.concat([self.curved, self.curved_to_straight],3)
 
-        # self.gen_pair_score   = self.discriminator(self.gen_pair, self.options, reuse=False,  name="discriminator")
-        # self.g_adv_loss  = self.criterionGAN(self.gen_pair_score, tf.ones_like(self.gen_pair_score))
         self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
-        # self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
         self.g_loss      = self.L1_lambda * self.g_mse_loss
-
-        ####################################################################################################################################
-        ### Discriminator
-        # self.fake_pair       = tf.placeholder(tf.float32, [None, None, None, self.input_c_dim + self.input_c_dim], name = "fake_input_pair")
-        # self.fake_pair_score = self.discriminator(self.fake_pair,        self.options, reuse=True,   name="discriminator")
-        # self.real_pair_score = self.discriminator(self.curved_concat_straight, self.options, reuse=True,   name="discriminator")
-        
-        
-        # self.d_loss_real = self.criterionGAN(self.real_pair_score, tf.ones_like( self.real_pair_score)) 
-        # self.d_loss_fake = self.criterionGAN(self.fake_pair_score, tf.zeros_like(self.fake_pair_score)) 
-        # self.d_loss = (self.d_loss_real + self.d_loss_fake)/2
-
         ########################################################################################################
         ### Tensorboard
-        # self.g_adv_loss_sum  = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
         self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss*self.L1_lambda)
         self.g_loss_sum      = tf.summary.scalar("3_g_loss", self.g_loss)
-        self.g_sum           = tf.summary.merge([self.g_adv_loss_sum, self.g_mse_loss_sum, self.g_loss_sum])
-        # self.d_loss_real_sum = tf.summary.scalar("4_d_loss_real", self.d_loss_real)
-        # self.d_loss_fake_sum = tf.summary.scalar("5_d_loss_fake", self.d_loss_fake)
-        # self.d_loss_sum      = tf.summary.scalar("6_d_loss", self.d_loss)
-        # self.d_sum           = tf.summary.merge([self.d_loss_real_sum, self.d_loss_fake_sum, self.d_loss_sum])
+        self.g_sum           = tf.summary.merge([ self.g_mse_loss_sum, self.g_loss_sum])
         ### Save to npy 先留著不刪除，但因耗時目前應該是不用它囉
         self.counter_np     = np.array([])
-        # self.g_adv_loss_np  = np.array([])
         self.g_mse_loss_np  = np.array([])
         self.g_loss_np      = np.array([])
-        # self.d_loss_real_np = np.array([])
-        # self.d_loss_fake_np = np.array([])
-        # self.d_loss_np      = np.array([])
-
-
         ########################################################################################################
         self.curved_test = tf.placeholder(tf.float32,
                                      [None, None, None,self.input_c_dim], name='curved_test')
@@ -110,7 +84,8 @@ def _build_kong_model_no_discriminator(self):
         # self.d_vars = [var for var in t_vars if 'discriminator' in var.name]
         self.g_vars = [var for var in t_vars if 'generator' in var.name]
         for var in t_vars: print(var.name)
-    
+
+
     def _build_kong_model(self):
         ####################################################################################################################################
         ### Generator
@@ -124,18 +99,15 @@ def _build_kong_model_no_discriminator(self):
         self.g_adv_loss  = self.criterionGAN(self.gen_pair_score, tf.ones_like(self.gen_pair_score))
         self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
         self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
-
         ####################################################################################################################################
         ### Discriminator
         self.fake_pair       = tf.placeholder(tf.float32, [None, None, None, self.input_c_dim + self.input_c_dim], name = "fake_input_pair")
         self.fake_pair_score = self.discriminator(self.fake_pair,        self.options, reuse=True,   name="discriminator")
         self.real_pair_score = self.discriminator(self.curved_concat_straight, self.options, reuse=True,   name="discriminator")
         
-        
         self.d_loss_real = self.criterionGAN(self.real_pair_score, tf.ones_like( self.real_pair_score)) 
         self.d_loss_fake = self.criterionGAN(self.fake_pair_score, tf.zeros_like(self.fake_pair_score)) 
         self.d_loss = (self.d_loss_real + self.d_loss_fake)/2
-
         ########################################################################################################
         ### Tensorboard
         self.g_adv_loss_sum  = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
@@ -154,8 +126,6 @@ def _build_kong_model_no_discriminator(self):
         self.d_loss_real_np = np.array([])
         self.d_loss_fake_np = np.array([])
         self.d_loss_np      = np.array([])
-
-
         ########################################################################################################
         self.curved_test = tf.placeholder(tf.float32,
                                      [None, None, None,self.input_c_dim], name='curved_test')
@@ -308,24 +278,6 @@ def _build_kong_model_no_discriminator(self):
                 self.writer.add_summary(summary_str, counter)
 
                 #################################################################################################################
-                # Update D network
-                db_curved_img = batch_images[0,...,0:self.input_c_dim]
-                # cv2.imshow("db_curved_img",db_curved_img)
-                fake_curved_to_straight_img = fake_curved_to_straight[0]
-                # cv2.imshow("fake_curved_to_straight_img",fake_curved_to_straight_img)
-                fake_input_pair_img = np.dstack( (db_curved_img,fake_curved_to_straight_img) )
-                fake_input_pair_img = fake_input_pair_img.reshape(1,self.image_size_height,self.image_size_width,self.input_c_dim+self.input_c_dim)
-                # print("fake_input_pair_img.shape",fake_input_pair_img.shape)
-                # cv2.waitKey(0)
-                _, summary_str = self.sess.run(
-                    [self.d_optim, self.d_sum],
-                    feed_dict={self.curved_concat_straight: batch_images,
-                               self.fake_pair: fake_input_pair_img,
-                               self.lr: lr})
-                self.writer.add_summary(summary_str, counter)
-
-                #################################################################################################################
-                # counter += 1 原始寫這邊，我把它調到下面去囉
                 cost_time = time.time() - start_time
                 hour = cost_time//3600 ; minute = cost_time%3600//60 ; second = cost_time%3600%60
                 print(("Epoch: [%2d] [%4d/%4d] time: %4.4f, %2d:%02d:%02d counter:%d" % (
@@ -338,7 +290,7 @@ def _build_kong_model_no_discriminator(self):
                 if np.mod(counter, args.save_freq) == 1:#2:
                     self.save(args.checkpoint_dir, counter)
 
-                counter += 1  ### 調到這裡
+                counter += 1  
 
 
 

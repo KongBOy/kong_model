@@ -438,7 +438,8 @@ def main(_):
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
         #model.train(args) if args.phase == 'train' \
-        model.train_kong(args) if args.phase == 'train' \
+        # model.train_kong(args) if args.phase == 'train' \
+        model.train_kong_no_discriminator(args) if args.phase == 'train' \
              else model.test(args)
 
 if __name__ == '__main__':
