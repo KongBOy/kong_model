@@ -345,7 +345,7 @@ image_size_height = 472
 
 ####################################################################################
 ### wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test
-name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test"
+name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_rm-G-adv-remain-D"
 phase = "train"
 # ## train完後test
 # phase = "test"
@@ -438,8 +438,8 @@ def main(_):
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
         # model.train(args) if args.phase == 'train' \
-        # model.train_kong(args) if args.phase == 'train' \
-        model.train_kong_no_discriminator(args) if args.phase == 'train' \
+        # model.train_kong_no_discriminator(args) if args.phase == 'train' \
+        model.train_kong(args) if args.phase == 'train' \
              else model.test(args)
 
 if __name__ == '__main__':
