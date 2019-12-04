@@ -65,12 +65,14 @@ class cyclegan(object):
         self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
 
         self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
+        self.g_mse_lambda_loss  = self.L1_lambda * self.g_mse_loss
         self.g_loss      = self.L1_lambda * self.g_mse_loss
         ########################################################################################################
         ### Tensorboard
-        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss)
-        self.g_loss_sum      = tf.summary.scalar("3_g_loss", self.g_loss)
-        self.g_sum           = tf.summary.merge([ self.g_mse_loss_sum, self.g_loss_sum])
+        self.g_mse_loss_sum         = tf.summary.scalar("2_a_g_mse_loss", self.g_mse_loss)
+        self.g_mse_loss_lambda_sum  = tf.summary.scalar("2_b_g_mse_lambda_loss", self.g_mse_lambda_loss)
+        self.g_loss_sum             = tf.summary.scalar("3_g_loss", self.g_loss)
+        self.g_sum                  = tf.summary.merge([ self.g_mse_loss_sum, self.g_mse_loss_lambda_sum, self.g_loss_sum])
         ### Save to npy 先留著不刪除，但因耗時目前應該是不用它囉
         self.counter_np     = np.array([])
         self.g_mse_loss_np  = np.array([])
@@ -94,6 +96,7 @@ class cyclegan(object):
         self.straight = self.curved_concat_straight[:,:,:, self.input_c_dim:self.input_c_dim + self.input_c_dim]
         self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
         self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
+        self.g_mse_lambda_loss  = self.L1_lambda * self.g_mse_loss
 
         self.gen_pair    = tf.concat([self.curved, self.curved_to_straight],3)
         self.gen_pair_score   = self.discriminator(self.gen_pair, self.options, reuse=False,  name="discriminator")
@@ -110,10 +113,11 @@ class cyclegan(object):
         self.d_loss = (self.d_loss_real + self.d_loss_fake)/2
         ########################################################################################################
         ### Tensorboard
-        self.g_adv_loss_sum  = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
-        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss)
-        self.g_loss_sum      = tf.summary.scalar("3_g_loss", self.g_loss)
-        self.g_sum           = tf.summary.merge([self.g_adv_loss_sum, self.g_mse_loss_sum, self.g_loss_sum])
+        self.g_adv_loss_sum         = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
+        self.g_mse_loss_sum         = tf.summary.scalar("2_a_g_mse_loss", self.g_mse_loss)
+        self.g_mse_loss_lambda_sum  = tf.summary.scalar("2_b_g_mse_lambda_loss", self.g_mse_lambda_loss)
+        self.g_loss_sum             = tf.summary.scalar("3_g_loss", self.g_loss)
+        self.g_sum                  = tf.summary.merge([self.g_adv_loss_sum, self.g_mse_loss_sum, self.g_mse_loss_lambda_sum, self.g_loss_sum])
         self.d_loss_real_sum = tf.summary.scalar("4_d_loss_real", self.d_loss_real)
         self.d_loss_fake_sum = tf.summary.scalar("5_d_loss_fake", self.d_loss_fake)
         self.d_loss_sum      = tf.summary.scalar("6_d_loss", self.d_loss)
