@@ -43,7 +43,8 @@ class cyclegan(object):
                                       args.phase == 'train'))
         
         build_model_start_time = time.time()
-        self._build_kong_model()
+        self._build_kong_model_no_discriminator()
+        # self._build_kong_model()
         # self._build_model()
         print("_build_model_cost_time:",time.time()-build_model_start_time)
         self.saver = tf.train.Saver()
@@ -55,7 +56,36 @@ class cyclegan(object):
         self.Kong_test_dataPairs = None
         self.Kong_load_test_dataset()
 
-    
+    def _build_kong_model_no_discriminator(self):
+        ####################################################################################################################################
+        ### Generator
+        self.curved_concat_straight = tf.placeholder(tf.float32,[None, None, None, self.input_c_dim + self.output_c_dim],name = "curved_concat_straight")
+        self.curved   = self.curved_concat_straight[:,:,:,                 :self.input_c_dim ]
+        self.straight = self.curved_concat_straight[:,:,:, self.input_c_dim:self.input_c_dim + self.input_c_dim]
+        self.curved_to_straight = self.generator(self.curved, self.options, False, name="generatorC2S")
+
+        self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
+        self.g_loss      = self.L1_lambda * self.g_mse_loss
+        ########################################################################################################
+        ### Tensorboard
+        self.g_mse_loss_sum  = tf.summary.scalar("2_g_mse_loss", self.g_mse_loss*self.L1_lambda)
+        self.g_loss_sum      = tf.summary.scalar("3_g_loss", self.g_loss)
+        self.g_sum           = tf.summary.merge([ self.g_mse_loss_sum, self.g_loss_sum])
+        ### Save to npy 先留著不刪除，但因耗時目前應該是不用它囉
+        self.counter_np     = np.array([])
+        self.g_mse_loss_np  = np.array([])
+        self.g_loss_np      = np.array([])
+        ########################################################################################################
+        self.curved_test = tf.placeholder(tf.float32,
+                                     [None, None, None,self.input_c_dim], name='curved_test')
+        self.curved_to_straight_test = self.generator(self.curved_test, self.options, True, name="generatorC2S")
+        ########################################################################################################
+        t_vars = tf.trainable_variables()
+        # self.d_vars = [var for var in t_vars if 'discriminator' in var.name]
+        self.g_vars = [var for var in t_vars if 'generator' in var.name]
+        for var in t_vars: print(var.name)
+
+
     def _build_kong_model(self):
         ####################################################################################################################################
         ### Generator
@@ -69,18 +99,15 @@ class cyclegan(object):
         self.g_adv_loss  = self.criterionGAN(self.gen_pair_score, tf.ones_like(self.gen_pair_score))
         self.g_mse_loss  = abs_criterion(self.straight, self.curved_to_straight)
         self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
-
         ####################################################################################################################################
         ### Discriminator
         self.fake_pair       = tf.placeholder(tf.float32, [None, None, None, self.input_c_dim + self.input_c_dim], name = "fake_input_pair")
         self.fake_pair_score = self.discriminator(self.fake_pair,        self.options, reuse=True,   name="discriminator")
         self.real_pair_score = self.discriminator(self.curved_concat_straight, self.options, reuse=True,   name="discriminator")
         
-        
         self.d_loss_real = self.criterionGAN(self.real_pair_score, tf.ones_like( self.real_pair_score)) 
         self.d_loss_fake = self.criterionGAN(self.fake_pair_score, tf.zeros_like(self.fake_pair_score)) 
         self.d_loss = (self.d_loss_real + self.d_loss_fake)/2
-
         ########################################################################################################
         ### Tensorboard
         self.g_adv_loss_sum  = tf.summary.scalar("1_g_adv_loss", self.g_adv_loss)
@@ -99,8 +126,6 @@ class cyclegan(object):
         self.d_loss_real_np = np.array([])
         self.d_loss_fake_np = np.array([])
         self.d_loss_np      = np.array([])
-
-
         ########################################################################################################
         self.curved_test = tf.placeholder(tf.float32,
                                      [None, None, None,self.input_c_dim], name='curved_test')
@@ -198,6 +223,74 @@ class cyclegan(object):
 
                 counter += 1  ### 調到這裡
 
+    def train_kong_no_discriminator(self, args):
+        print("train start count time")
+        train_start_time = time.time()
+
+        """Train cyclegan"""
+        self.Kong_copy_current_py(args.name) ### 把目前的設定存一份起來！
+
+        ### 這裡也花時間，大概30秒左右 建立完 lr, d_optim, g_optim
+        self.lr = tf.placeholder(tf.float32, None, name='learning_rate')
+        # self.d_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1).minimize(self.d_loss, var_list=self.d_vars)
+        self.g_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1).minimize(self.g_loss, var_list=self.g_vars)
+        print("finish optimizer cost_time:",time.time() - train_start_time)
+        
+        ### 這兩步還好，只花了2秒鐘
+        init_op = tf.global_variables_initializer() 
+        self.sess.run(init_op)
+        print("finish global_variable_initializer cost_time:",time.time() - train_start_time) 
+        
+        self.writer = tf.summary.FileWriter(args.log_dir, self.sess.graph) ### 這個最花時間 大概70幾秒
+        print("finish FileWriter cost_time:",time.time() - train_start_time)
+        
+        counter = 1
+        start_time = time.time()
+        import cv2
+        if args.continue_train:
+            if self.load(args.checkpoint_dir):
+                print(" [*] Load SUCCESS")
+            else:
+                print(" [!] Load failed...")
+
+        print("train before epoch cost time:",time.time()-train_start_time)
+
+        for epoch in range(args.epoch):
+            dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainA'))
+            dataB = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainB'))
+
+            batch_idxs = min(min(len(dataA), len(dataB)), args.train_size) // self.batch_size
+            lr = args.lr if epoch < args.epoch_step else args.lr*(args.epoch-epoch)/(args.epoch-args.epoch_step)
+
+            for idx in range(0, batch_idxs):
+                #################################################################################################################
+                # Load Batch data
+                batch_files = list(zip(dataA[idx * self.batch_size : (idx + 1) * self.batch_size],
+                                       dataB[idx * self.batch_size : (idx + 1) * self.batch_size]))
+                batch_images = [load_train_data(batch_file, args.load_size, self.image_size_height, self.image_size_width) for batch_file in batch_files]
+                batch_images = np.array(batch_images).astype(np.float32)
+
+                #################################################################################################################
+                # Update G network and record fake outputs
+                fake_curved_to_straight,_, summary_str = self.sess.run(
+                    [self.curved_to_straight, self.g_optim, self.g_sum],  #[self.fake_A, self.fake_B, self.g_optim, self.g_sum],
+                    feed_dict={self.curved_concat_straight: batch_images, self.lr: lr})
+                self.writer.add_summary(summary_str, counter)
+
+                #################################################################################################################
+                cost_time = time.time() - start_time
+                hour = cost_time//3600 ; minute = cost_time%3600//60 ; second = cost_time%3600%60
+                print(("Epoch: [%2d] [%4d/%4d] time: %4.4f, %2d:%02d:%02d counter:%d" % (
+                    epoch, idx, batch_idxs, time.time() - start_time,hour, minute, second, counter)))
+
+                if np.mod(counter, args.print_freq) == 1:#1:
+                    self.Kong_sample_new_model(args.sample_dir, counter)  ### sample目的地資料夾、存圖時紀錄counter
+                    # self.Kong_save_loss(batch_images,fake_input_pair_img,counter)
+
+                if np.mod(counter, args.save_freq) == 1:#2:
+                    self.save(args.checkpoint_dir, counter)
+
+                counter += 1  
 
 
 
