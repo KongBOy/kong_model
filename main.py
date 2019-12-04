@@ -345,7 +345,24 @@ image_size_height = 472
 
 ####################################################################################
 ### wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test
-name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test"
+# name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_add_train_test"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 600 #800
+
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# lambda_kong = 10
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_mix_x328_new_model_05-D-no-concat
+name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_05-D-no-concat"
 phase = "train"
 # ## train完後test
 # phase = "test"
@@ -359,6 +376,7 @@ lambda_kong = 10
 # continue_train = True
 image_size_width = 304
 image_size_height = 472
+
 
 ####################################################################################
 dataset_dir = name
@@ -439,7 +457,8 @@ def main(_):
         model = cyclegan(sess, args)
         # model.train(args) if args.phase == 'train' \
         # model.train_kong(args) if args.phase == 'train' \
-        model.train_kong_no_discriminator(args) if args.phase == 'train' \
+        # model.train_kong_no_discriminator(args) if args.phase == 'train' \
+        model.train_kong_D_no_concat(args) if args.phase == 'train' \
              else model.test(args)
 
 if __name__ == '__main__':
