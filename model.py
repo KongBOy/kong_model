@@ -43,8 +43,8 @@ class cyclegan(object):
                                       args.phase == 'train'))
         
         build_model_start_time = time.time()
-        # self._build_kong_model_no_discriminator()
-        self._build_kong_model()
+        self._build_kong_model_no_discriminator()
+        # self._build_kong_model()
         # self._build_model()
         print("_build_model_cost_time:",time.time()-build_model_start_time)
         self.saver = tf.train.Saver()
