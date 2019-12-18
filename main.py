@@ -279,19 +279,19 @@ np.random.seed(19)
 
 ####################################################################################s
 ## wei-crop-accurate_w=304,h=472_left-top_x82_use_cycle
-name = "wei-crop-accurate_w=304,h=472_left-top_x82_use_cycle"
-phase = "train"
-# ## train完後test
-# phase = "test"
+# name = "wei-crop-accurate_w=304,h=472_left-top_x82_use_cycle"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
 
-epoch = 1000 #800
+# epoch = 1000 #800
 
-save_freq = 20000 ### 最多好像存5次
-print_freq = 100
-continue_train = False
-# continue_train = True
-image_size_width = 304
-image_size_height = 472
+# save_freq = 20000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
 
 
 ####################################################################################
@@ -363,14 +363,41 @@ image_size_height = 472
 
 
 ### wei-crop-accurate_w=304,h=472_mix_x328_new_model_no-discriminator
-name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_no-discriminator"
+# name = "wei-crop-accurate_w=304,h=472_mix_x328_new_model_no-discriminator"
+# phase = "train"
+# # ## train完後test
+# # phase = "test"
+
+# epoch = 4000 #800
+
+# save_freq = 100000 ### 最多好像存5次
+# print_freq = 100
+# continue_train = False
+# lambda_kong = 10
+# # continue_train = True
+# image_size_width = 304
+# image_size_height = 472
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_LT_x82_new_model_01-have-D_D-have-concat
+name = "wei-crop-accurate_w=304,h=472_LT_x82_01-have-D_D-have-concat"
+epoch = 1500 #800
+save_freq = 20000 ### 最多好像存5次
+
+### wei-crop-accurate_w=304,h=472_LT_x82_new_model_02-have-D_D-no-concat
+# name = "wei-crop-accurate_w=304,h=472_LT_x82_02-have-D_D-no-concat"
+# epoch = 1500 #800
+# save_freq = 20000 ### 最多好像存5次
+
+### wei-crop-accurate_w=304,h=472_LT_x82_new_model_03-no_D
+# name = "wei-crop-accurate_w=304,h=472_LT_x82_03-no_D"
+# epoch = 1500 #800
+# save_freq = 200000 ### 最多好像存5次
+
 phase = "train"
 # ## train完後test
 # phase = "test"
 
-epoch = 4000 #800
-
-save_freq = 100000 ### 最多好像存5次
 print_freq = 100
 continue_train = False
 lambda_kong = 10
@@ -455,12 +482,13 @@ def main(_):
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
     tfconfig.gpu_options.allow_growth = True
     with tf.Session(config=tfconfig) as sess:
-        model = cyclegan(sess, args)
-        # model.train(args) if args.phase == 'train' \
-        # model.train_kong(args) if args.phase == 'train' \
-        # model.train_kong_no_discriminator(args) if args.phase == 'train' \
-        model.train_kong_D_no_concat(args) if args.phase == 'train' \
-             else model.test(args)
+        model = cyclegan(sess, args)  ### 記得要進去改 建立模型的地方
+
+        # model.train(args) if args.phase == 'train' else model.test(args)                       ### 有時間待修，有CYCLE的版本
+        model.train_kong(args) if args.phase == 'train' else model.test(args)                  ### 無Cycle，有D，D有concat
+        # model.train_kong_D_no_concat(args) if args.phase == 'train' else model.test(args)      ### 無Cycle，有D，D無concat
+        # model.train_kong_no_discriminator(args) if args.phase == 'train' else model.test(args) ### 無Cycle，無D
+             
 
 if __name__ == '__main__':
     # print(tf.__version__)
