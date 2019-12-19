@@ -104,8 +104,8 @@ class cyclegan(object):
         self.gen_pair    = tf.concat([self.curved, self.curved_to_straight],3)
         self.gen_pair_score   = self.discriminator(self.gen_pair, self.options, reuse=False,  name="discriminator")
         self.g_adv_loss  = self.criterionGAN(self.gen_pair_score, tf.ones_like(self.gen_pair_score))
-        # self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
-        self.g_loss      = self.L1_lambda * self.g_mse_loss
+        self.g_loss      = self.g_adv_loss + self.L1_lambda * self.g_mse_loss
+        # self.g_loss      = self.L1_lambda * self.g_mse_loss
         ####################################################################################################################################
         ### Discriminator
         self.fake_pair       = tf.placeholder(tf.float32, [None, None, None, self.input_c_dim + self.input_c_dim], name = "fake_input_pair")
