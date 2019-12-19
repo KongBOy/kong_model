@@ -115,7 +115,7 @@ def generator_resnet(image, options, reuse=False, name="generator"):
         c1 = tf.nn.relu(instance_norm(conv2d(c0, options.gf_dim, 7, 1, padding='VALID', name='g_e1_c'), 'g_e1_bn'))
         c2 = tf.nn.relu(instance_norm(conv2d(c1, options.gf_dim*2, 3, 2, name='g_e2_c'), 'g_e2_bn'))
         c3 = tf.nn.relu(instance_norm(conv2d(c2, options.gf_dim*4, 3, 2, name='g_e3_c'), 'g_e3_bn'))
-        # define G network with 9 resnet blocks
+        # define G network with 9 resnet blocks ### try12試試看
         r1 = residule_block(c3, options.gf_dim*4, name='g_r1')
         r2 = residule_block(r1, options.gf_dim*4, name='g_r2')
         r3 = residule_block(r2, options.gf_dim*4, name='g_r3')
@@ -125,8 +125,11 @@ def generator_resnet(image, options, reuse=False, name="generator"):
         r7 = residule_block(r6, options.gf_dim*4, name='g_r7')
         r8 = residule_block(r7, options.gf_dim*4, name='g_r8')
         r9 = residule_block(r8, options.gf_dim*4, name='g_r9')
+        r10 = residule_block(r9, options.gf_dim*4, name='g_r10')
+        r11 = residule_block(r10, options.gf_dim*4, name='g_r11')
+        r12 = residule_block(r11, options.gf_dim*4, name='g_r12')
 
-        d1 = deconv2d(r9, options.gf_dim*2, 3, 2, name='g_d1_dc')
+        d1 = deconv2d(r12, options.gf_dim*2, 3, 2, name='g_d1_dc')
         d1 = tf.nn.relu(instance_norm(d1, 'g_d1_bn'))
         d2 = deconv2d(d1, options.gf_dim, 3, 2, name='g_d2_dc')
         d2 = tf.nn.relu(instance_norm(d2, 'g_d2_bn'))

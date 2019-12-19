@@ -380,9 +380,9 @@ np.random.seed(19)
 
 ####################################################################################
 ### wei-crop-accurate_w=304,h=472_LT_x82_new_model_01-have-D_D-have-concat
-name = "wei-crop-accurate_w=304,h=472_LT_x82_01-have-D_D-have-concat"
-epoch = 1500 #800
-save_freq = 20000 ### 最多好像存5次
+# name = "wei-crop-accurate_w=304,h=472_LT_x82_01-have-D_D-have-concat"
+# epoch = 1500 #800
+# save_freq = 20000 ### 最多好像存5次
 
 ### wei-crop-accurate_w=304,h=472_LT_x82_new_model_02-have-D_D-no-concat
 # name = "wei-crop-accurate_w=304,h=472_LT_x82_02-have-D_D-no-concat"
@@ -393,6 +393,12 @@ save_freq = 20000 ### 最多好像存5次
 # name = "wei-crop-accurate_w=304,h=472_LT_x82_03-no_D"
 # epoch = 1500 #800
 # save_freq = 200000 ### 最多好像存5次
+
+####################################################################################
+### wei-crop-accurate_w=304,h=472_LT_x82_ResBx12_01-have-D_D-have-concat
+name = "wei-crop-accurate_w=304,h=472_LT_x82_ResBx12_01-have-D_D-have-concat"
+epoch = 1500 #800
+save_freq = 20000 ### 最多好像存5次
 
 phase = "train"
 # ## train完後test
