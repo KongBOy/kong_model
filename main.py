@@ -389,15 +389,15 @@ np.random.seed(19)
 # epoch = 1500 #800
 # save_freq = 20000 ### 最多好像存5次
 
-### wei-crop-accurate_w=304,h=472_LT_x82_new_model_03-no_D
+### wei-crop-accurate_w=304,h=472_LT_x82_new_model_03-no_Dq
 # name = "wei-crop-accurate_w=304,h=472_LT_x82_03-no_D"
 # epoch = 1500 #800
 # save_freq = 200000 ### 最多好像存5次
 
 ####################################################################################
 ### wei-crop-accurate_w=304,h=472_LT_x82_ResBx12_01-have-D_D-have-concat
-name = "wei-crop-accurate_w=304,h=472_LT_x82_ResBx12_01-have-D_D-have-concat"
-epoch = 1500 #800
+name = "wei-crop-accurate_w=304,h=472_MIX_x82_ResBx150"
+epoch = 800 #1500 #800
 save_freq = 20000 ### 最多好像存5次
 
 phase = "train"
