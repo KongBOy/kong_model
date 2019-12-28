@@ -395,10 +395,17 @@ np.random.seed(19)
 # save_freq = 200000 ### 最多好像存5次
 
 ####################################################################################
-### wei-crop-accurate_w=304,h=472_LT_x82_ResBx12_01-have-D_D-have-concat
-name = "wei-crop-accurate_w=304,h=472_MIX_x82_ResBx150"
-epoch = 800 #1500 #800
+### wei-crop-accurate_w=304,h=472_MIX_ResBx150
+# name = "wei-crop-accurate_w=304,h=472_MIX_ResBx150"
+# epoch = 800 #1500 #800
+# save_freq = 20000 ### 最多好像存5次
+
+
+### wei-crop-accurate_w=304,h=472_MIX_ResBx150_no-D
+name = "wei-crop-accurate_w=304,h=472_MIX_ResBx150_no-D"
+epoch = 1500 #800
 save_freq = 20000 ### 最多好像存5次
+
 
 phase = "train"
 # ## train完後test
@@ -491,9 +498,9 @@ def main(_):
         model = cyclegan(sess, args)  ### 記得要進去改 建立模型的地方
 
         # model.train(args) if args.phase == 'train' else model.test(args)                       ### 有時間待修，有CYCLE的版本
-        model.train_kong(args) if args.phase == 'train' else model.test(args)                  ### 無Cycle，有D，D有concat
+        # model.train_kong(args) if args.phase == 'train' else model.test(args)                  ### 無Cycle，有D，D有concat
         # model.train_kong_D_no_concat(args) if args.phase == 'train' else model.test(args)      ### 無Cycle，有D，D無concat
-        # model.train_kong_no_discriminator(args) if args.phase == 'train' else model.test(args) ### 無Cycle，無D
+        model.train_kong_no_discriminator(args) if args.phase == 'train' else model.test(args) ### 無Cycle，無D
              
 
 if __name__ == '__main__':

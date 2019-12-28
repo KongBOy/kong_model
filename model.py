@@ -44,9 +44,9 @@ class cyclegan(object):
         
         build_model_start_time = time.time()
         # self._build_model()                        ### 有時間待修，有CYCLE的版本
-        self._build_kong_model()                   ### 無Cycle，有D，D有concat
+        # self._build_kong_model()                   ### 無Cycle，有D，D有concat
         # self._build_kong_model_D_no_concat()       ### 無Cycle，有D，D無concat
-        # self._build_kong_model_no_discriminator()  ### 無Cycle，無D
+        self._build_kong_model_no_discriminator()  ### 無Cycle，無D
         
         
         print("_build_model_cost_time:",time.time()-build_model_start_time)
