@@ -379,19 +379,19 @@ np.random.seed(19)
 # image_size_height = 472
 
 ####################################################################################
-### wei-crop-accurate_w=304,h=472_LT_x82_new_model_01-have-D_D-have-concat
-name = "wei-crop-accurate_w=304,h=472_LT_x82_01-have-D_D-have-concat"
-epoch = 1500 #800
+### wei-crop-accurate_w=304,h=472_mix_x328_Gridx168_01-D-concat
+name = "wei-crop-accurate_w=304,h=472_mix_x328_Gridx168_01-D-concat"
+epoch = 300 #1500 #800
 save_freq = 20000 ### 最多好像存5次
 
-### wei-crop-accurate_w=304,h=472_LT_x82_new_model_02-have-D_D-no-concat
-# name = "wei-crop-accurate_w=304,h=472_LT_x82_02-have-D_D-no-concat"
-# epoch = 1500 #800
+### wei-crop-accurate_w=304,h=472_mix_x328_Gridx168_02-D-no-concat
+# name = "wei-crop-accurate_w=304,h=472_mix_x328_Gridx168_02-D-no-concat"
+# epoch = 300 #1500 #800
 # save_freq = 20000 ### 最多好像存5次
 
-### wei-crop-accurate_w=304,h=472_LT_x82_new_model_03-no_D
-# name = "wei-crop-accurate_w=304,h=472_LT_x82_03-no_D"
-# epoch = 1500 #800
+### wei-crop-accurate_w=304,h=472_mix_x328_Gridx168_03-no-D
+# name = "wei-crop-accurate_w=304,h=472_mix_x328_Gridx168_03-no-D"
+# epoch = 3000 #1500 #800
 # save_freq = 200000 ### 最多好像存5次
 
 phase = "train"
